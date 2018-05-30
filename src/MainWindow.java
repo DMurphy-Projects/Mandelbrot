@@ -15,12 +15,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 
-public class MainWindow implements MouseWheelListener, MouseListener, ActionListener{
+public class MainWindow implements MouseWheelListener, MouseListener, ActionListener, MouseMotionListener{
 
-    double resolution = 0.005, zoomFactor = 0.9, moveFactor = 0.1;
+    double resolution = 0.005, zoomFactor = 0.9, moveFactor = 0.01, tolerance = 1;
+    Point prev = new Point(0, 0);
     int width, height, lastX = 0, lastY = 0;
 
-    boolean scroolBlock = false;
+    boolean mouseDown;
 
     ComplexNumber centre = new ComplexNumber(0, 0), size = new ComplexNumber(1, 1);
 
@@ -100,6 +101,7 @@ public class MainWindow implements MouseWheelListener, MouseListener, ActionList
 
         frame.addMouseWheelListener(this);
         frame.addMouseListener(this);
+        frame.addMouseMotionListener(this);
         frame.add(view);
         frame.pack();
         frame.setVisible(true);
@@ -184,40 +186,16 @@ public class MainWindow implements MouseWheelListener, MouseListener, ActionList
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        double r = centre.getReal(), i = centre.getImaginary();
-
-        int height = frame.getHeight();
-        int width = frame.getWidth();
-
-        if (e.getY() < height * 0.25)
-        {
-            i = i - (moveFactor * size.getImaginary());
-        }
-        if(e.getY() > height * 0.75)
-        {
-            i = i + (moveFactor * size.getImaginary());
-        }
-        if(e.getX() < width * 0.25)
-        {
-            r = r - (moveFactor * size.getReal());
-        }
-        if (e.getX() > width * 0.75)
-        {
-            r = r + (moveFactor * size.getReal());
-        }
-
-        centre = new ComplexNumber(r, i);
-        needsUpdating = true;
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-
+        mouseDown = true;
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-
+        mouseDown = false;
     }
 
     @Override
@@ -227,7 +205,7 @@ public class MainWindow implements MouseWheelListener, MouseListener, ActionList
 
     @Override
     public void mouseExited(MouseEvent e) {
-
+        mouseDown = false;
     }
 
     @Override
@@ -301,5 +279,42 @@ public class MainWindow implements MouseWheelListener, MouseListener, ActionList
                 i++;
             }
         }
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (mouseDown)
+        {
+            int x = prev.x - e.getX();
+            int y = prev.y - e.getY();
+            System.out.println(x +" "+y);
+            double r = centre.getReal(), i = centre.getImaginary();
+
+            if (x > tolerance)
+            {
+                r = r + (moveFactor * size.getReal());
+            }
+            if (x < -tolerance)
+            {
+                r = r - (moveFactor * size.getReal());
+            }
+            if (y > tolerance)
+            {
+                i = i + (moveFactor * size.getImaginary());
+            }
+            if (y < -tolerance)
+            {
+                i = i - (moveFactor * size.getImaginary());
+            }
+
+            prev = new Point(e.getX(), e.getY());
+            centre = new ComplexNumber(r, i);
+            needsUpdating = true;
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
     }
 }
